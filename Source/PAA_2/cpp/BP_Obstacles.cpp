@@ -134,31 +134,85 @@ FCellInfo ABP_Obstacles::GetCellInfo(int32 X, int32 Y) const                    
 
 void ABP_Obstacles::CreateObstacleMap(TArray<TArray<bool>>& ObstacleMap)
 {
-    ObstacleMap.SetNum(GridSize);                                                                                       //inizializza la mappa degli ostacoli
+    ObstacleMap.SetNum(GridSize);
     for (int32 x = 0; x < GridSize; ++x)
     {
         ObstacleMap[x].SetNum(GridSize);
         for (int32 y = 0; y < GridSize; ++y)
         {
-            ObstacleMap[x][y] = false;                                                                                  //tutte le celle all'inizio sono vuote e via via vanno riempite
+            ObstacleMap[x][y] = false; 
         }
     }
+    TArray<FIntPoint> AllCells;                                                                                         //fase 1: Assegnazione iniziale in ordine casuale
 
-    for (int32 x = 0; x < GridSize; ++x)                                                                                //aggiungiamo ostacoli casuali rispettando la probabilità scelta MA VERIFICANDO CHE NON CI SIANO ZONE CHIUSE
+    for (int32 x = 0; x < GridSize; ++x)                                                                                //costruisce una lista di tutte le coordinate della griglia
     {
         for (int32 y = 0; y < GridSize; ++y)
         {
-            if (FMath::FRand() <= SpawnProbability)
+            AllCells.Add(FIntPoint(x, y));
+        }
+    }
+    for (int32 i = AllCells.Num() - 1; i > 0; --i)                                                                      //mescola l'array manualmente utilizzando l'algoritmo Fisher-Yates
+    {
+        int32 j = FMath::RandRange(0, i);
+        AllCells.Swap(i, j);
+    }
+    for (FIntPoint Cell : AllCells)                                                                                     //itera sulle celle mescolate e prova a impostarle come ostacolo in base alla SpawnProbability
+    {
+        if (FMath::FRand() <= SpawnProbability)
+        {
+            ObstacleMap[Cell.X][Cell.Y] = true;                                                                         //imposta temporaneamente la cella come ostacolo
+            if (!AreAllCellsReachable(ObstacleMap))                                                                     //verifica se la mappa rimane connessa
             {
-                ObstacleMap[x][y] = true;                                                                               //tenta di spawnare un'ostacolo, l'aggiunta potrebbe fallire come no
-                                                                                                                        //PERCHE'? commento nella funzione AreAllCellsReachable
-                
-                if (!AreAllCellsReachable(ObstacleMap))
-                {
-                                                                                                                        //se la mappa non è valida, rimuovi l'ostacolo
-                    ObstacleMap[x][y] = false;
-                }
+                ObstacleMap[Cell.X][Cell.Y] = false;
             }
+        }
+    }
+    int32 TotalCells = GridSize * GridSize;                                                                             //fase 2: Forza il raggiungimento del numero esatto di celle libere/ostacoli
+
+    int32 DesiredFreeCells = TotalCells - FMath::RoundToInt(TotalCells * SpawnProbability);
+    int32 CurrentFreeCells = 0;                                                                                         //conta il numero attuale di celle libere e memorizza le loro coordinate
+    TArray<FIntPoint> FreeCells;
+    for (int32 x = 0; x < GridSize; ++x)
+    {
+        for (int32 y = 0; y < GridSize; ++y)
+        {
+            if (!ObstacleMap[x][y])
+            {
+                FreeCells.Add(FIntPoint(x, y));
+                CurrentFreeCells++;
+            }
+        }
+    }
+    while (CurrentFreeCells > DesiredFreeCells)                                                                         //se il numero di celle libere supera quello desiderato, prova a convertirle in ostacoli
+    {
+        bool bChanged = false;
+
+                                                                                                                        //mescola manualmente l'elenco delle celle libere per selezionare in ordine casuale
+        for (int32 i = FreeCells.Num() - 1; i > 0; --i)
+        {
+            int32 j = FMath::RandRange(0, i);
+            FreeCells.Swap(i, j);
+        }
+        for (int32 i = 0; i < FreeCells.Num(); ++i)                                                                     //itera sulle celle libere mescolate
+        {
+            FIntPoint Cell = FreeCells[i];
+            ObstacleMap[Cell.X][Cell.Y] = true;                                                                         //prova a trasformare la cella libera in un ostacolo
+            if (AreAllCellsReachable(ObstacleMap))
+            {
+                CurrentFreeCells--;                                                                                     //diminuisce il conteggio delle celle libere
+                FreeCells.RemoveAt(i);                                                                                  //rimuove la cella convertita dalla lista delle celle libere
+                bChanged = true;                                                                                        //indica che è stata effettuata una conversione
+                break;                                                                                                  //esce dal ciclo per ricontrollare la condizione del while
+            }
+            else
+            {
+                ObstacleMap[Cell.X][Cell.Y] = false;
+            }
+        }
+        if (!bChanged)
+        {
+            break;
         }
     }
 }
