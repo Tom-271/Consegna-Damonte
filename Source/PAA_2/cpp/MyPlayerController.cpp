@@ -173,52 +173,49 @@ void AMyPlayerController::Tick(float DeltaTime)                                 
 
 void AMyPlayerController::HandleMouseClick()
 {
-    AMyGameMode* game_mode = Cast<AMyGameMode>(GetWorld()->GetAuthGameMode());                                      //controllo se è il turno del giocatore
+    AMyGameMode* game_mode = Cast<AMyGameMode>(GetWorld()->GetAuthGameMode());                                      //inizializza game_mode
     if (!game_mode || !game_mode->bIsPlayerTurn)
     {
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina se non e' turno del player
     }
 
-    float mouse_x, mouse_y;                                                                                             //variabili per la posizione del mouse
+    float mouse_x, mouse_y;                                                                                             //dichiara coordinate mouse
     if (!GetMousePosition(mouse_x, mouse_y))
     {
-        UE_LOG(LogTemp, Error, TEXT("impossibile ottenere la posizione del mouse!"));
-        return;                                                                                                         //esce dalla funzione
+        UE_LOG(LogTemp, Error, TEXT("impossibile ottenere la posizione del mouse!")); 
+        return;                                                                                                         //termina se la posizione del mouse non e' ottenuta
     }
-
-    FVector world_location, world_direction;                                                                            //variabili per posizione e direzione mondiali
+    FVector world_location, world_direction;                                                                            //dichiara posizione e direzione nel mondo
     if (!DeprojectScreenPositionToWorld(mouse_x, mouse_y, world_location, world_direction))
     {
-        return;                                                                                                         //esce se la conversione fallisce
+        return; 
     }
-    FHitResult hit_result;                                                                                              //variabile per il risultato del line trace
-    FVector start = world_location;                                                                                     //inizio del line trace
-    FVector end = world_location + (world_direction * 3000.0f);                                                         //fine del line trace
+    FHitResult hit_result;                                                                                              //dichiara risultato dell'hit
+    FVector start = world_location;                                                                                     //inizio del trace
+    FVector end = world_location + (world_direction * 3000.0f);                                                         //fine del trace
     if (!GetWorld()->LineTraceSingleByChannel(hit_result, start, end, ECC_Visibility))
     {
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina se il trace non colpisce nulla
     }
-    ABP_Obstacles* obstacles = Cast<ABP_Obstacles>(UGameplayStatics::GetActorOfClass(GetWorld(), ABP_Obstacles::StaticClass())); //ottengo il riferimento agli ostacoli (griglia)
+    ABP_Obstacles* obstacles = Cast<ABP_Obstacles>(UGameplayStatics::GetActorOfClass(GetWorld(), ABP_Obstacles::StaticClass())); //ottiene riferimento agli ostacoli
     if (!obstacles)
     {
-        UE_LOG(LogTemp, Error, TEXT("obstacles non trovato!")); 
-        return;                                                                                                         //esce dalla funzione
+        return; 
     }
-    int32 x, y;                                                                                                         //variabili per le coordinate della cella
+    int32 x, y;                                                                                                         //dichiara coordinate della cella
     if (!obstacles->GetCellCoordinatesFromWorldPosition(hit_result.Location, x, y))
     {
         UE_LOG(LogTemp, Error, TEXT("coordinate della cella non valide!")); 
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina se non si riescono a ottenere le coordinate
     }
-
-    FCellInfo cell_info = obstacles->GetCellInfo(x, y);                                                                 //recupero le informazioni della cella
+    FCellInfo cell_info = obstacles->GetCellInfo(x, y);                                                                 //ottiene info della cella
     if (cell_info.bIsObstacle)
     {
         if (LateralPanelWidgetInstance)
         {
-            LateralPanelWidgetInstance->AddGameMessage(TEXT("impossibile interagire con la cella: è un ostacolo..."), FLinearColor::Gray); //mostra messaggio: cella è un ostacolo
+            LateralPanelWidgetInstance->AddGameMessage(TEXT("impossibile interagire con la cella: è un ostacolo..."), FLinearColor::Gray); //mostra messaggio se la cella e' un ostacolo
         }
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina se la cella e' un ostacolo
     }
 
     if (hit_result.GetActor() == SelectedBrawler && bIsMovingBrawler && !bHasBrawlerMoved)
@@ -226,37 +223,36 @@ void AMyPlayerController::HandleMouseClick()
         ClearReachableTiles();                                                                                          //pulisce le celle evidenziate
         bIsMovingBrawler = false;                                                                                       //disabilita il movimento del brawler
         SelectedBrawler = nullptr;                                                                                      //deseleziona il brawler
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina la funzione
     }
     else if (hit_result.GetActor() == SelectedSniper && bIsMovingSniper && !bHasSniperMoved)
     {
         ClearReachableTiles();                                                                                          //pulisce le celle evidenziate
         bIsMovingSniper = false;                                                                                        //disabilita il movimento dello sniper
         SelectedSniper = nullptr;                                                                                       //deseleziona lo sniper
-        return;                                                                                                         //esce dalla funzione
+        return;                                                                                                         //termina la funzione
     }
     if (hit_result.GetActor()->ActorHasTag(FName("Brawler")))
     {
-        ClearReachableTiles();                                                                                          //pulisce le celle evidenziate
+        ClearReachableTiles(); 
         if (bHasBrawlerMoved)
-            return;                                                                                                     //se il brawler ha già mosso, esce dalla funzione
-
-        bIsMovingBrawler = true;                                                                                        //abilita il movimento del brawler
+            return;                                                                                                     //termina se il brawler ha già mosso
+        bIsMovingBrawler = true;                                                                                        //abilita la modalità movimento per il brawler
         SelectedBrawler = hit_result.GetActor();                                                                        //seleziona il brawler
-        SelectedSniper = nullptr;                                                                                       //annulla ogni riferimento allo sniper
-        int32 cell_x, cell_y;                                                                                           //variabili per le coordinate della cella del brawler
+        SelectedSniper = nullptr;                                                                                       //deseleziona lo sniper
+        int32 cell_x, cell_y;                                                                                           //dichiara coordinate della cella del brawler
         if (obstacles->GetCellCoordinatesFromWorldPosition(SelectedBrawler->GetActorLocation(), cell_x, cell_y))
         {
             if (AGridManagerCPP* grid_manager = GetGridManager())
             {
                 grid_manager->HighlightCell(cell_x, cell_y, true);                                              //evidenzia la cella corrente del brawler
-                TArray<TPair<int32, int32>> reachable_cells = FindReachableCells(obstacles, cell_x, cell_y, 6, SelectedBrawler); //trova le celle raggiungibili (fino a 6 passi)
+                TArray<TPair<int32, int32>> reachable_cells = FindReachableCells(obstacles, cell_x, cell_y, 6, SelectedBrawler); //trova le celle raggiungibili per il brawler
                 for (const auto& cell : reachable_cells)
                 {
                     if (!IsCellBlocked(cell.Key, cell.Value, SelectedBrawler))
-                        grid_manager->HighlightCell(cell.Key, cell.Value, true);                          //evidenzia ogni cella raggiungibile non bloccata
+                        grid_manager->HighlightCell(cell.Key, cell.Value, true);
                 }
-                bAreReachableTilesVisible = true;                                                                       //imposta la visibilità delle celle raggiungibili
+                bAreReachableTilesVisible = true;                                                                       //imposta le celle raggiungibili come visibili
             }
         }
     }
@@ -264,98 +260,100 @@ void AMyPlayerController::HandleMouseClick()
     {
         ClearReachableTiles();                                                                                          //pulisce le celle evidenziate
         if (bHasSniperMoved)
-            return;                                                                                                     //se lo sniper ha già mosso, esce dalla funzione
+            return;                                                                                                     //termina se lo sniper ha già mosso
 
-        bIsMovingSniper = true;                                                                                         //abilita il movimento dello sniper
+        bIsMovingSniper = true;                                                                                         //abilita la modalità movimento per lo sniper
         SelectedSniper = hit_result.GetActor();                                                                         //seleziona lo sniper
-        SelectedBrawler = nullptr;                                                                                      //annulla ogni riferimento al brawler
-        int32 cell_x, cell_y; 
+        SelectedBrawler = nullptr;                                                                                      //deseleziona il brawler
+        int32 cell_x, cell_y;                                                                                           //dichiara coordinate della cella dello sniper
         if (obstacles->GetCellCoordinatesFromWorldPosition(SelectedSniper->GetActorLocation(), cell_x, cell_y))
         {
             if (AGridManagerCPP* grid_manager = GetGridManager())
             {
                 grid_manager->HighlightCell(cell_x, cell_y, true);                                              //evidenzia la cella corrente dello sniper
-                TArray<TPair<int32, int32>> reachable_cells = FindReachableCells(obstacles, cell_x, cell_y, 3, SelectedSniper); //trova le celle raggiungibili (fino a 3 passi)
+                TArray<TPair<int32, int32>> reachable_cells = FindReachableCells(obstacles, cell_x, cell_y, 3, SelectedSniper); //trova le celle raggiungibili per lo sniper
                 for (const auto& cell : reachable_cells)
                 {
                     if (!IsCellBlocked(cell.Key, cell.Value, SelectedSniper))
-                        grid_manager->HighlightCell(cell.Key, cell.Value, true);                          //evidenzia ogni cella raggiungibile non bloccata
+                        grid_manager->HighlightCell(cell.Key, cell.Value, true);                          //evidenzia la cella se non bloccata
                 }
-                bAreReachableTilesVisible = true;                                                                       //imposta la visibilità delle celle raggiungibili
+                bAreReachableTilesVisible = true;                                                                       //imposta le celle raggiungibili come visibili
             }
         }
     }
     else if (bIsMovingBrawler && SelectedBrawler)
     {
-        MoveBrawlerToCell(x, y);                                                                                        //muovo il brawler verso la cella cliccata
+        MoveBrawlerToCell(x, y);                                                                                        //muove il brawler alla cella selezionata
     }
     else if (bIsMovingSniper && SelectedSniper)
     {
-        MoveSniperToCell(x, y);                                                                                         //muovo lo sniper verso la cella cliccata
+        MoveSniperToCell(x, y);                                                                                         //muove lo sniper alla cella selezionata
     }
     else if (bIsPlacingBrawler)
     {
-        GetGameMode()->SetIsPlacingBrawler(true);                                                                       //attiva il posizionamento del brawler
+        GetGameMode()->SetIsPlacingBrawler(true);                                                                       //abilita la modalità di posizionamento del brawler
         GetGameMode()->OnCellSelected(x, y);                                                                            //segnala la cella selezionata per il posizionamento del brawler
     }
     else if (bIsPlacingSniper)
     {
-        GetGameMode()->SetIsPlacingSniper(true);                                                                        //attiva il posizionamento dello sniper
+        GetGameMode()->SetIsPlacingSniper(true);                                                                        //abilita la modalità di posizionamento dello sniper
         GetGameMode()->OnCellSelected(x, y);                                                                            //segnala la cella selezionata per il posizionamento dello sniper
     }
-
     if (hit_result.GetActor()->ActorHasTag(FName("AISniper")) || hit_result.GetActor()->ActorHasTag(FName("AIBrawler")))
     {
-        int32 target_x, target_y;                                                                                       //variabili per le coordinate del bersaglio
+        int32 target_x, target_y;                                                                                       //dichiara coordinate del bersaglio
         if (!obstacles->GetCellCoordinatesFromWorldPosition(hit_result.GetActor()->GetActorLocation(), target_x, target_y))
         {
-            return;                                                                                                     //esce dalla funzione
+            return;                                                                                                     //termina se non si ottengono le coordinate del bersaglio
         }
-
         if (SelectedBrawler != nullptr)
         {
-            SelectedSniper = nullptr;                                                                                   //annullo ogni riferimento allo sniper se il brawler è attivo
-            int32 brawler_x, brawler_y;                                                                                 //variabili per le coordinate del brawler
+            SelectedSniper = nullptr;                                                                                   //annulla eventuale selezione dello sniper
+            int32 brawler_x, brawler_y;                                                                                 //dichiara coordinate del brawler
             if (obstacles->GetCellCoordinatesFromWorldPosition(SelectedBrawler->GetActorLocation(), brawler_x, brawler_y))
             {
-                int32 distance_brawler = FMath::Abs(brawler_x - target_x) + FMath::Abs(brawler_y - target_y);     //calcolo la distanza del brawler dal bersaglio
+                int32 distance_brawler = FMath::Abs(brawler_x - target_x) + FMath::Abs(brawler_y - target_y);     //calcola la distanza del brawler dal bersaglio
                 if (distance_brawler <= 1)
                 {
-                    HandleBrawlerAttack(hit_result.GetActor());                                                   //eseguo l'attacco del brawler se il bersaglio è entro 1 cella
+                    HandleBrawlerAttack(hit_result.GetActor());                                                   //esegue l'attacco del brawler
                 }
                 else
                 {
-                    FString log_message = FString::Printf(TEXT("Il bersaglio è fuori portata per il brawler (distanza: %d)"), distance_brawler); //preparo il messaggio di errore per il brawler
+                    FString log_message = FString::Printf(TEXT("Il bersaglio è fuori portata per il brawler (distanza: %d)"), distance_brawler); //prepara il messaggio di errore
                     if (LateralPanelWidgetInstance)
                     {
-                        LateralPanelWidgetInstance->AddGameMessage(log_message, FLinearColor::Black); //mostro il messaggio sul pannello laterale
+                        LateralPanelWidgetInstance->AddGameMessage(log_message, FLinearColor::Black);                   //mostra il messaggio sul pannello laterale
                     }
-                    
+                    SelectedBrawler = nullptr;                                                                          //resetta la selezione del brawler
+                    bIsMovingBrawler = false;                                                                           //disabilita la modalità movimento del brawler
                 }
             }
         }
-        else if (SelectedSniper != nullptr)
+        if (SelectedSniper != nullptr)
         {
-            int32 sniper_x, sniper_y;                                                                                   //variabili per le coordinate dello sniper
+            int32 sniper_x, sniper_y;                                                                                   //dichiara coordinate dello sniper
             if (obstacles->GetCellCoordinatesFromWorldPosition(SelectedSniper->GetActorLocation(), sniper_x, sniper_y))
             {
-                int32 distance_sniper = FMath::Abs(sniper_x - target_x) + FMath::Abs(sniper_y - target_y);        //calcolo la distanza dello sniper dal bersaglio
+                int32 distance_sniper = FMath::Abs(sniper_x - target_x) + FMath::Abs(sniper_y - target_y);        //calcola la distanza dello sniper dal bersaglio
                 if (distance_sniper <= 10)
                 {
-                    HandleSniperAttack(hit_result.GetActor());                                                    //eseguo l'attacco dello sniper se il bersaglio è entro 10 celle
+                    HandleSniperAttack(hit_result.GetActor());                                                    //esegue l'attacco dello sniper
                 }
                 else
                 {
-                    FString log_message = FString::Printf(TEXT("Il bersaglio è fuori portata per lo sniper (distanza: %d)"), distance_sniper); //preparo il messaggio di errore per lo sniper
+                    FString log_message = FString::Printf(TEXT("Il bersaglio è fuori portata per lo sniper (distanza: %d)"), distance_sniper); //prepara il messaggio di errore
                     if (LateralPanelWidgetInstance)
                     {
-                        LateralPanelWidgetInstance->AddGameMessage(log_message, FLinearColor::Black);                   //mostro il messaggio sul pannello laterale
+                        LateralPanelWidgetInstance->AddGameMessage(log_message, FLinearColor::Black);                   //mostra il messaggio sul pannello laterale
                     }
+                    SelectedSniper = nullptr;                                                                           //resetta la selezione dello sniper
+                    bIsMovingSniper = false;                                                                            //disabilita la modalità movimento dello sniper
                 }
             }
         }
     }
 }
+
 
 void AMyPlayerController::ClearReachableTiles()                                                                         //ripulisce visualizzazione celle
 {
