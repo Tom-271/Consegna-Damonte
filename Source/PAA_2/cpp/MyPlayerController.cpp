@@ -1087,49 +1087,6 @@ void AMyPlayerController::HandlePlayerCounterAttack(AActor* Attacker, AActor* De
             LateralPanelWidgetInstance->AddGameMessage(Message, FLinearColor::Blue);                                     //mostra il messaggio sul pannello laterale
         }
     }
-    else if (Defender->ActorHasTag(FName("Brawler")))                                                                   //se colui che difente è brawler
-    {
-        ABP_Obstacles* Obstacles = Cast<ABP_Obstacles>(UGameplayStatics::GetActorOfClass(GetWorld(), ABP_Obstacles::StaticClass())); //ottiene l'oggetto degli ostacoli dalla scena
-        if (Obstacles)
-        {
-            int32 AttackerX, AttackerY, DefenderX, DefenderY; //variabili per le coordinate delle celle
-            if (Obstacles->GetCellCoordinatesFromWorldPosition(Attacker->GetActorLocation(), AttackerX, AttackerY) &&
-                Obstacles->GetCellCoordinatesFromWorldPosition(Defender->GetActorLocation(), DefenderX, DefenderY))
-            {
-                int32 Distance = FMath::Abs(AttackerX - DefenderX) + FMath::Abs(AttackerY - DefenderY);           //calcola la distanza in termini di celle
-
-                if (Distance <= 1)
-                {
-                    int32 CounterDamage = FMath::RandRange(1, 3);                                              //calcola casualmente il danno del contrattacco
-                    UE_LOG(LogTemp, Warning, TEXT("%s contrattacca %s con %d danni!"), *Defender->GetName(), *Attacker->GetName(), CounterDamage);
-
-                    AAIMode* AIMode = Cast<AAIMode>(UGameplayStatics::GetActorOfClass(GetWorld(), AAIMode::StaticClass())); 
-                    if (AIMode)
-                    {
-                        if (Attacker->ActorHasTag(FName("AIBrawler")))
-                        {
-                            AIMode->ApplyDamageToAIBrawler(CounterDamage);                                              //applica danno al AIBrawler se l'attaccante è AIBrawler
-                        }
-                        else if (Attacker->ActorHasTag(FName("AISniper")))
-                        {
-                            AIMode->ApplyDamageToAISniper(CounterDamage);                                               //applica danno al AISniper se l'attaccante è AISniper
-                        }
-                    }
-                    if (LateralPanelWidgetInstance)
-                    {
-                        FString DefenderName = TEXT("B");                                                               //imposta il nome del difensore come "B" (Brawler)
-                        FString AttackerName = Attacker->ActorHasTag(FName("AIBrawler")) ? TEXT("B") : TEXT("S");       //imposta il nome dell'attaccante: "B" se AIBrawler, altrimenti "S"
-                        FString Message = FString::Printf(TEXT("Contrattacco HP: %s -> %s %d danni"), *DefenderName, *AttackerName, CounterDamage); 
-                        LateralPanelWidgetInstance->AddGameMessage(Message, FLinearColor::Blue);                         //mostra il messaggio sul pannello laterale
-                    }
-                }
-                else
-                {
-                    UE_LOG(LogTemp, Warning, TEXT("Nessun contrattacco: l'attaccante non è adiacente!")); 
-                }
-            }
-        }
-    }
 }
 
 AGridManagerCPP* AMyPlayerController::GetGridManager() const

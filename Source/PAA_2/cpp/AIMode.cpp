@@ -851,7 +851,7 @@ void AAIMode::CounterAttack(AActor* Attacker, AActor* Defender)                 
     {
         return;
     }
-    if (Attacker->ActorHasTag(FName("Brawler")))                                                                        //se attaccante è brawler
+   if (Attacker->ActorHasTag(FName("Brawler")))                                                                        //se attaccante è brawler
     {
         ABP_Obstacles* Obstacles = Cast<ABP_Obstacles>(UGameplayStatics::GetActorOfClass(GetWorld(), ABP_Obstacles::StaticClass()));
         if (Obstacles)
@@ -918,32 +918,6 @@ void AAIMode::HandleAICounterAttack(AActor* Attacker, AActor* Defender)         
                 Attacker->ActorHasTag(FName("Brawler")) ? TEXT("B") : TEXT("S"),
                 CounterDamage);                                                                                         //crea messaggio
             Panel->AddGameMessage(Message, FLinearColor::Red);                                                          //mostra messaggio
-        }
-        return;
-    }
-    if (Defender->ActorHasTag(FName("AIBrawler")))                                                                      //se difensore è brawler
-    {
-        ABP_Obstacles* Obstacles = Cast<ABP_Obstacles>(
-            UGameplayStatics::GetActorOfClass(GetWorld(), ABP_Obstacles::StaticClass()));                           //ottiene ostacoli
-        int32 AX, AY, PX, PY;
-        Obstacles->GetCellCoordinatesFromWorldPosition(Defender->GetActorLocation(), AX, AY);           //coordinate difensore
-        Obstacles->GetCellCoordinatesFromWorldPosition(Attacker->GetActorLocation(), PX, PY);           //coordinate attaccante
-        int32 Dist = FMath::Abs(AX - PX) + FMath::Abs(AY - PY);                                                   //calcola distanza
-        if (Dist <= 1)                                                                                                  //se adiacente, allora può contrattaccare
-        {
-            int32 CounterDamage = FMath::RandRange(1, 3);
-            UE_LOG(LogTemp, Warning, TEXT("AIBrawler contrattacca %s con %d danni!"), *Attacker->GetName(), CounterDamage);
-            if (Attacker->ActorHasTag(FName("Brawler")))                                                                //applica danno a brawler
-                OnPlayerBrawlerDamaged.Broadcast(CounterDamage);
-            else if (Attacker->ActorHasTag(FName("Sniper")))                                                            //applica danno a sniper
-                OnPlayerSniperDamaged.Broadcast(CounterDamage);
-            if (ULateralPanelWidget* Panel = GetLateralPanelWidget())                                                   //ottiene widget
-            {
-                FString Message = FString::Printf(TEXT("Contrattacco AI: B -> %s %d danni"),
-                    Attacker->ActorHasTag(FName("Brawler")) ? TEXT("B") : TEXT("S"),
-                    CounterDamage);                                                                                     //crea messaggio per il contrattacco
-                Panel->AddGameMessage(Message, FLinearColor::Red);                                                      //mostra messaggio
-            }
         }
     }
 }
