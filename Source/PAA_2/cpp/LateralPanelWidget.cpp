@@ -41,7 +41,7 @@ void ULateralPanelWidget::NativeConstruct()
     {
         UE_LOG(LogTemp, Error, TEXT("AIMode non trovato!"));
     }
-    GameModeRef = Cast<AMyGameMode>(UGameplayStatics::GetGameMode(this));                          //prende riferimento alla gamemode per far spawnare il brawler o lo sniper in base a quale dei due viene premuto
+    GameModeRef = Cast<AMyGameMode>(UGameplayStatics::GetGameMode(this));                           //prende riferimento alla gamemode per far spawnare il brawler o lo sniper in base a quale dei due viene premuto
 
     if (GameModeRef)
     {
@@ -514,12 +514,12 @@ void ULateralPanelWidget::OnInfoBrawlerButtonClicked()                          
     if (SpawnedBrawlerActor)                                                                                            //se lo ripremo scompare
     {
         BRAWLERIMAGE->SetVisibility(ESlateVisibility::Hidden);
-        SpawnedBrawlerActor->Destroy();                                                                                 //distruggo
+        SpawnedBrawlerActor->Destroy();
         SpawnedBrawlerActor = nullptr;
         UE_LOG(LogTemp, Warning, TEXT("BRAWLER3D distrutto!"));
-        bIsRotating = false;                                                                                            //ne blocco la rotazione
-                                                                                                                        
-    }                                                                                                                   //sto gestendo anche la scomparsa sia quando premo lo stesso pulsante info che l'altro, mutui esclusivi
+        bIsRotating = false;
+
+    }
     else
     {
         BRAWLERIMAGE->SetVisibility(ESlateVisibility::Visible);
@@ -533,11 +533,11 @@ void ULateralPanelWidget::OnInfoSniperButtonClicked()                           
 {
     BRAWLERIMAGE->SetVisibility(ESlateVisibility::Hidden);
 
-    if (SpawnedBrawlerActor)                                                                                            
+    if (SpawnedBrawlerActor)
     {
         SpawnedBrawlerActor->Destroy();
         SpawnedBrawlerActor = nullptr;
-        UE_LOG(LogTemp, Warning, TEXT("BRAWLER3D distrutto!"));
+        UE_LOG(LogTemp, Warning, TEXT("BRAWLER3D distrutto!"));                                                         
         bIsRotating = false;
     }
 
@@ -552,9 +552,9 @@ void ULateralPanelWidget::OnInfoSniperButtonClicked()                           
 
         if (SNIPERIMAGE)
         {
-            SNIPERIMAGE->SetVisibility(ESlateVisibility::Hidden);
-        }
-    }
+            SNIPERIMAGE->SetVisibility(ESlateVisibility::Hidden);                                                           //sto gestendo l'essere mutui esclusivi nel codice, sia per le foto che per i render3D, per questioni
+        }                                                                                                                   //estetiche ha senso che se premo un pulsante compaiano le cose, se lo ripremo scompaiano, se premo sniper mentre la visualizzazione
+    }                                                                                                                       //di brawler è attiva brawler scompaia, viceversa, mutui esclusivi
     else
     {
         SpawnSniper3DInForeground();
@@ -588,7 +588,7 @@ void ULateralPanelWidget::SpawnBrawler3DInForeground()
     FRotator CameraRotation;
     PlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
-    FVector SpawnLocation = CameraLocation + CameraRotation.Vector() * 250.0f;                                          //distanza dalla telecamera
+    FVector SpawnLocation = CameraLocation + CameraRotation.Vector() * 250.0f; 
     FRotator SpawnRotation = CameraRotation;
                                                                                                                         //in queste precedenti righe si configura camera rotazione dell render
     FActorSpawnParameters SpawnParams;
@@ -621,7 +621,7 @@ void ULateralPanelWidget::SpawnSniper3DInForeground()                           
         return;
     }
     FVector CameraLocation;
-    FRotator CameraRotation;
+    FRotator CameraRotation;                                                            
     PlayerController->GetPlayerViewPoint(CameraLocation, CameraRotation);
 
     FVector SpawnLocation = CameraLocation + CameraRotation.Vector() * 250.0f;
